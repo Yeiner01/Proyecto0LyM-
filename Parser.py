@@ -15,6 +15,7 @@ def leer_archivo(nombre_archivo):
     except Exception as e:
         return f"Ocurrió un error: {e}"  
 def tokenizer(text):
+    archivo = leer_archivo(text)
     keywords = {
         'move', 'turn', 'face', 'put', 'pick', 'jump', 'nop',
         'if', 'then', 'else', 'while', 'do', 'repeat', 'for',
@@ -26,7 +27,7 @@ def tokenizer(text):
     directions = {'#north', '#south', '#west', '#east', '#front', '#right', '#left', '#back', '#around'}
     types = {'#balloons', '#chips'}
     
-    lines = text.split('\n')
+    lines = archivo.split('\n')
     valid_tokens = []
 
     
