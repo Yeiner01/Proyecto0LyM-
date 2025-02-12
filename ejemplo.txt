@@ -7,7 +7,7 @@
  
  c := n .
  b := m .
- put : c ofType: #chips . put: b ofType: #balloons ]
+ put : c ofType: #chips . put: b ofType: #balloons ] 
   proc goNorth [
  while: canMove: 1 inDir: #north do: [ move: 1 InDir: #north .
  ]
