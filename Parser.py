@@ -64,7 +64,7 @@ def tokenizer(text):
                     valid_tokens['KEYWORD'].append(tokens)
             elif tokens[0] == 'turn:':
                 if len(tokens) >= 2 and tokens[1] in {'#left', '#right', '#around'}:
-                    valid_tokens['KEYWORD'].append(tokens)
+                    valid_tokens['DIRECTIONS'].append(tokens)
             elif tokens[0] == 'face:':
                 if len(tokens) >= 2 and tokens[1] in directions:
                     valid_tokens['DIRECTIONS'].append(tokens)
