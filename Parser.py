@@ -5,7 +5,7 @@ import ro
 
 def leer_archivo(nombre_archivo):
     """Lee el contenido de un archivo .txt y lo devuelve como una cadena."""
-    nombre_archivo += "ejemplo.txt"  
+    nombre_archivo += ".txt"  
 
     try:
         with open(nombre_archivo, "r", encoding="utf-8") as archivo:
@@ -16,6 +16,7 @@ def leer_archivo(nombre_archivo):
         return f"Ocurrió un error: {e}"  
 def tokenizer(text):
     archivo = leer_archivo(text)
+    
     keywords = {
         'move', 'turn', 'face', 'put', 'pick', 'jump', 'nop',
         'if', 'then', 'else', 'while', 'do', 'repeat', 'for',
@@ -28,7 +29,17 @@ def tokenizer(text):
     types = {'#balloons', '#chips'}
     
     lines = archivo.split('\n')
-    valid_tokens = []
+    valid_tokens = {
+        'KEYWORD': [],
+        'VARIABLE_DECLARATION': [],
+        'PROCEDURE_DECLARATION': [],
+        'DIRECTION': [],
+        'TYPE': [],
+        'ASSIGNMENT': [],
+        'CONDITION': [],
+        'OPERATION': [],
+        'OTHER': []
+    }
 
     
     for line in lines:
@@ -36,48 +47,57 @@ def tokenizer(text):
         if not tokens:
             continue
         
+        if variable_declaration.match(line):
+            valid_tokens['VARIABLE_DECLARATION'].append(tokens)
+            continue
+        if procedure_declaration.match(line):
+            valid_tokens['PROCEDURE_DECLARATION'].append(tokens)
+            continue
+        
         
         if tokens[0] in keywords:
             if tokens[0] == 'goto:':
                 if len(tokens) >= 4 and tokens[2] == 'with:':
-                    valid_tokens.extend(tokens)
+                    valid_tokens['KEYWORD'].append(tokens)
             elif tokens[0] == 'move:':
                 if len(tokens) >= 2:
-                    valid_tokens.extend(tokens)
+                    valid_tokens['KEYWORD'].append(tokens)
             elif tokens[0] == 'turn:':
                 if len(tokens) >= 2 and tokens[1] in {'#left', '#right', '#around'}:
-                    valid_tokens.extend(tokens)
+                    valid_tokens['KEYWORD'].append(tokens)
             elif tokens[0] == 'face:':
                 if len(tokens) >= 2 and tokens[1] in directions:
-                    valid_tokens.extend(tokens)
+                    valid_tokens['DIRECTIONS'].append(tokens)
             elif tokens[0] == 'put:' or tokens[0] == 'pick:':
                 if len(tokens) >= 4 and tokens[2] == 'ofType:' and tokens[3] in types:
-                    valid_tokens.extend(tokens)
+                    valid_tokens['KEYWORD'].append(tokens)
             elif tokens[0] == 'if:':
                 if len(tokens) >= 4 and tokens[2] == 'then:':
-                    valid_tokens.extend(tokens)
+                   valid_tokens['KEYWORD'].append(tokens)
             elif tokens[0] == 'while:':
                 if len(tokens) >= 3 and tokens[2] == 'do:':
-                    valid_tokens.extend(tokens)
+                    valid_tokens['KEYWORD'].append(tokens)
             elif tokens[0] == 'repeat:':
                 if len(tokens) >= 3 and tokens[1] == 'for:':
-                    valid_tokens.extend(tokens)
+                    valid_tokens['KEYWORD'].append(tokens)
             elif tokens[0] == 'canPut:' or tokens[0] == 'canPick:' or tokens[0] == 'canMove:' or tokens[0] == 'canJump:':
                 if len(tokens) >= 4 and tokens[2] == 'ofType:' and tokens[3] in types:
-                    valid_tokens.extend(tokens)
+                    valid_tokens['KEYWORD'].append(tokens)
             elif tokens[0] == 'not:':
                 if len(tokens) >= 2:
-                    valid_tokens.extend(tokens)
+                    valid_tokens['KEYWORD'].append(tokens)
         
         elif len(tokens) >= 3 and tokens[1] == ':=': #Verifica si es una asignación de variable
-            valid_tokens.extend(tokens)
+            valid_tokens['ASSIGNMENT'].append(tokens)
 
         
         elif len(tokens) >= 2 and tokens[0] == 'facing:' and tokens[1] in directions: # Verifica si es una condición de dirección
-            valid_tokens.extend(tokens)
+            valid_tokens['CONDITION'].append(tokens)
         
         elif len(tokens) >= 4 and tokens[2] == 'ofType:' and tokens[3] in types: # Verifica si es una operación con tipos
-            valid_tokens.extend(tokens)
+            valid_tokens['OPERATION'].append(tokens)
+        else:
+            valid_tokens['OTHER'].append(tokens)
     
     return valid_tokens
 
