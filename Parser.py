@@ -104,9 +104,3 @@ def tokenizer(text):
 
 
     
-    for line in lines:
-        tokens = line.strip().split()
-
-        if tokens.startswith('|') and tokens.endswith('|'):
-            valid_tokens.extend(tokens)
-            continue
