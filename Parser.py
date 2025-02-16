@@ -20,8 +20,7 @@ def tokenizer(text):
     keywords = {
         'move', 'turn', 'face', 'put', 'pick', 'jump', 'nop',
         'if', 'then', 'else', 'while', 'do', 'repeat', 'for',
-        'canPut', 'canPick', 'canMove', 'canJump', 'not', 'goto', "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z",
-"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"
+        'canPut', 'canPick', 'canMove', 'canJump', 'not', 'goto'
     }
     variable_declaration = re.compile(r'^\s*\|[a-z][a-zA-Z0-9]*(\s*, \s*[a-z][a-zA-Z0-9]*)*\|\s*$')
     procedure_declaration = re.compile(r'^\s*proc\s+[a-z][a-zA-Z0-9]*:\s*[a-z][a-zA-Z0-9]*(\s*and:\s*[a-z][a-zA-Z0-9]*)*\s*\[\s*\]$')
