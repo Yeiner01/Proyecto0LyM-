@@ -106,23 +106,14 @@ def Keyword(valid_token):
     dic = {}
     variables = set()
     tokens = []
-    for i in valid_token["KEYWORD"]:
-
-
-    for i in valid_token["VARIABLE_DECLARATION"]:
-
-    for i in valid_token["PROCEDURE_DECLARATION"]:
-
-    for i in valid_token["DIRECTION"]:
-
-    for i in valid_token["TYPE"]:
-    
-    for i in valid_token["ASSIGNMENT"]:
-
-    for i in valid_token["CONDITION"]:
-
-    for i in valid_token["OPERATION"]:
-
-    for i in valid_token["OTHER"]:
+    for token in tokens:
+        if token[0] in {"move", "turn", "face", "put", "pick", "jump", "nop"}:
+            parse_command(token)
+        elif token[0] in {"if", "while", "repeat"}:
+            parse_control_structure(token)
+        elif token[0] == "proc":
+            parse_procedure(token)
+        else:
+            raise SyntaxError(f"Error de sintaxis en la línea: {token}")
 
     
