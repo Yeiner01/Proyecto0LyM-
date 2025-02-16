@@ -1,154 +1,314 @@
 import re
-
-def leer_archivo(nombre_archivo):
-    """Lee el contenido de un archivo .txt y lo devuelve como una cadena."""
-    nombre_archivo += ".txt"  
-
-    try:
-        with open(nombre_archivo, "r", encoding="utf-8") as archivo:
-            return archivo.read()
-    except FileNotFoundError:
-        return f"Error: El archivo '{nombre_archivo}' no existe."
-    except Exception as e:
-        return f"Ocurrió un error: {e}"  
-
-def tokenizer(text):
-    archivo = leer_archivo(text)
+def tokenize(text):
+    # Order matters: longer tokens like ":=" must come before ":".
+    token_specs = [
+        ('ASSIGN',   r':='),   # operador de asignación
+        ('HASHID',   r'#[A-Za-z_][A-Za-z0-9_]*'),  # ej: #chips, #north
+        ('NUMBER',   r'\d+'),
+        ('ID',       r'[A-Za-z_][A-Za-z0-9_]*'),
+        ('PIPE',     r'\|'),
+        ('LBRACKET', r'\['),
+        ('RBRACKET', r'\]'),
+        ('COLON',    r':'),
+        ('DOT',      r'\.'),
+        ('COMMA',    r','),    # para separar variables locales
+        ('SKIP',     r'[ \t]+'),
+        ('NEWLINE',  r'\n'),
+        ('MISMATCH', r'.'),
+    ]
+    token_regex = "|".join("(?P<%s>%s)" % (name, pattern) for name, pattern in token_specs)
+    regex = re.compile(token_regex)
     
-    keywords = {
-        'move', 'turn', 'face', 'put', 'pick', 'jump', 'nop',
-        'if', 'then', 'else', 'while', 'do', 'repeat', 'for',
-        'canPut', 'canPick', 'canMove', 'canJump', 'not', 'goto'
-    }
-    variable_declaration = re.compile(r'^\s*\|[a-z][a-zA-Z0-9]*(\s*,\s*[a-z][a-zA-Z0-9]*)*\|\s*$')
-    procedure_declaration = re.compile(r'^\s*proc\s+[a-z][a-zA-Z0-9]*:\s*[a-z][a-zA-Z0-9]*(\s*and:\s*[a-z][a-zA-Z0-9]*)*\s*\[\s*\]$')
-    directions = {'#north', '#south', '#west', '#east', '#front', '#right', '#left', '#back', '#around'}
-    types = {'#balloons', '#chips'}
+    tokens = []
+    line_num = 1
+    line_start = 0
     
-    lines = archivo.split('\n')
-    valid_tokens = {
-        'KEYWORD': [],
-        'VARIABLE_DECLARATION': [],
-        'PROCEDURE_DECLARATION': [],
-        'DIRECTION': [],
-        'TYPE': [],
-        'ASSIGNMENT': [],
-        'CONDITION': [],
-        'OPERATION': [],
-        'COMMA': [],  # Nueva categoría para comas
-        'OTHER': []
-    }
+    for mo in regex.finditer(text):
+        kind = mo.lastgroup
+        value = mo.group()
+        column = mo.start() - line_start
+        if kind == 'NUMBER':
+            tokens.append((kind, int(value), line_num, column))
+        elif kind in ('ID', 'HASHID'):
+            tokens.append((kind, value, line_num, column))
+        elif kind in ('PIPE', 'LBRACKET', 'RBRACKET', 'COLON', 'DOT', 'COMMA', 'ASSIGN'):
+            tokens.append((kind, value, line_num, column))
+        elif kind == 'NEWLINE':
+            line_num += 1
+            line_start = mo.end()
+        elif kind == 'SKIP':
+            continue
+        elif kind == 'MISMATCH':
+            raise RuntimeError(f"Unexpected character {value!r} on line {line_num}")
+    return tokens
 
-    for line in lines:
-        tokens = re.findall(r':=|\w+|\S', line.strip())  # Usamos regex para capturar comas y otros tokens
-        if not tokens:
-            continue
-        
-        if variable_declaration.match(line):
-            valid_tokens['VARIABLE_DECLARATION'].append(tokens)
-            continue
-        if procedure_declaration.match(line):
-            valid_tokens['PROCEDURE_DECLARATION'].append(tokens)
-            continue
-        
-        # Verificar si el primer token es una palabra clave
-        if len(tokens) > 0 and tokens[0] in keywords:
-            if tokens[0] == 'goto:':
-                if len(tokens) >= 4 and tokens[2] == 'with:':
-                    valid_tokens['KEYWORD'].append(tokens)
-            elif tokens[0] == 'move:':
-                if len(tokens) >= 2:
-                    valid_tokens['KEYWORD'].append(tokens)
-            elif tokens[0] == 'turn:':
-                if len(tokens) >= 2 and tokens[1] in {'#left', '#right', '#around'}:
-                    valid_tokens['DIRECTION'].append(tokens)
-            elif tokens[0] == 'face:':
-                if len(tokens) >= 2 and tokens[1] in directions:
-                    valid_tokens['DIRECTION'].append(tokens)
-            elif tokens[0] in {'put:', 'pick:'}:
-                if len(tokens) >= 4 and tokens[2] == 'ofType:' and tokens[3] in types:
-                    valid_tokens['KEYWORD'].append(tokens)
-            elif tokens[0] == 'if:':
-                if len(tokens) >= 4 and tokens[2] == 'then:':
-                   valid_tokens['KEYWORD'].append(tokens)
-            elif tokens[0] == 'while:':
-                if len(tokens) >= 3 and tokens[2] == 'do:':
-                    valid_tokens['KEYWORD'].append(tokens)
-            elif tokens[0] == 'repeat:':
-                if len(tokens) >= 3 and tokens[1] == 'for:':
-                    valid_tokens['KEYWORD'].append(tokens)
-            elif tokens[0] in {'canPut:', 'canPick:', 'canMove:', 'canJump:'}:
-                if len(tokens) >= 4 and tokens[2] == 'ofType:' and tokens[3] in types:
-                    valid_tokens['KEYWORD'].append(tokens)
-            elif tokens[0] == 'not:':
-                if len(tokens) >= 2:
-                    valid_tokens['KEYWORD'].append(tokens)
-        
-        elif len(tokens) >= 3 and tokens[1] == ':=': # Verifica si es una asignación de variable
-            valid_tokens['ASSIGNMENT'].append(tokens)
+# --------------------------------------------------
+# Estado Global del Parser
+# --------------------------------------------------
+tokens = []   # Lista de tokens (se llena con tokenize)
+pos = 0       # Posición actual en la lista
 
-        elif len(tokens) >= 2 and tokens[0] == 'facing:' and tokens[1] in directions: # Verifica si es una condición de dirección
-            valid_tokens['CONDITION'].append(tokens)
-        
-        elif len(tokens) >= 4 and tokens[2] == 'ofType:' and tokens[3] in types: # Verifica si es una operación con tipos
-            valid_tokens['OPERATION'].append(tokens)
-        
-        elif ',' in tokens:  # Captura las comas
-            valid_tokens['COMMA'].append(tokens)
-        
+variables = set()   # Variables globales
+procedures = {}     # Procedimientos definidos
+
+def current_token():
+    global tokens, pos
+    if pos < len(tokens):
+        return tokens[pos]
+    return None
+
+def advance():
+    global pos
+    pos += 1
+
+def expect(token_type, token_value=None):
+    token = current_token()
+    if token is None:
+        error("Unexpected end of input")
+    if token[0] != token_type:
+        error(f"Expected token type {token_type} but got {token[0]}")
+    if token_value is not None and token[1] != token_value:
+        error(f"Expected token value '{token_value}' but got '{token[1]}'")
+    advance()
+
+def error(message):
+    token = current_token()
+    if token:
+        raise Exception(f"Syntax error at line {token[2]}, col {token[3]}: {message} (got {token})")
+    else:
+        raise Exception(f"Syntax error at end of input: {message}")
+
+# --------------------------------------------------
+# Funciones del Parser (Recursivo-Descendente)
+# --------------------------------------------------
+
+# Programa -> VariableDeclaration ProcedureDefinitions MainBlock
+def parse_program():
+    program = {}
+    # Declaración global de variables (opcional)
+    if current_token() and current_token()[0] == 'PIPE':
+        program['variables'] = parse_variable_declaration()
+    else:
+        program['variables'] = []
+    
+    # Procedimientos (cero o más)
+    proc_defs = []
+    while current_token() and current_token()[0] == 'ID' and current_token()[1] == 'proc':
+        proc_defs.append(parse_procedure_definition())
+    program['procedures'] = proc_defs
+    
+    # Bloque principal (opcional)
+    if current_token() and current_token()[0] == 'LBRACKET':
+        program['main'] = parse_code_block()
+    else:
+        program['main'] = []
+    return program
+
+# VariableDeclaration -> "|" IdentifierList "|"
+def parse_variable_declaration():
+    vars_list = []
+    expect('PIPE')
+    while current_token() and current_token()[0] == 'ID':
+        var_name = current_token()[1]
+        vars_list.append(var_name)
+        advance()
+        if current_token() and current_token()[0] == 'COMMA':
+            advance()
+    expect('PIPE')
+    return vars_list
+
+# ProcedureDefinition -> "proc" Identifier { (COLON | (ID starting with "and")) Parameter } CodeBlock
+def parse_procedure_definition():
+    expect('ID', 'proc')
+    if current_token() is None or current_token()[0] != 'ID':
+        error("Expected procedure name after 'proc'")
+    proc_name = current_token()[1]
+    advance()
+    
+    params = []
+    while True:
+        token = current_token()
+        if token and token[0] == 'COLON':
+            advance()  # saltar ":"
+            if current_token() is None or current_token()[0] != 'ID':
+                error("Expected parameter name after ':'")
+            params.append(current_token()[1])
+            advance()
+        elif token and token[0] == 'ID' and token[1].startswith("and"):
+            advance()  # saltar la etiqueta (ej: "andBalloons")
+            expect('COLON')
+            if current_token() is None or current_token()[0] != 'ID':
+                error("Expected parameter name after 'and...:'")
+            params.append(current_token()[1])
+            advance()
         else:
-            valid_tokens['OTHER'].append(tokens)
-    
-    return valid_tokens
+            break
 
-def parser(valid_tokens):
-    for token_type, tokens in valid_tokens.items():
-        if token_type == "KEYWORD":
-            for token in tokens:
-                if len(token) > 0 and token[0] in {"move", "turn", "face", "put", "pick", "jump", "nop"}:
-                    if not parse_command(token):
-                        return False
-                elif len(token) > 0 and token[0] in {"if", "while", "repeat"}:
-                    if not parse_control_structure(token):
-                        return False
-        elif token_type == "PROCEDURE_DECLARATION":
-            for token in tokens:
-                if not parse_procedure(token):
-                    return False
-        elif token_type == "ASSIGNMENT":
-            for token in tokens:
-                if not parse_assignment(token):
-                    return False
-        elif token_type == "OTHER":
-            return False
-    return True
+    body = parse_code_block()
+    proc_def = {'name': proc_name, 'params': params, 'body': body}
+    procedures[proc_name] = proc_def
+    return proc_def
 
-def parse_command(token):
-    if len(token) >= 2 and token[0] == "move" and token[1].isdigit():
-        return True
-    elif len(token) >= 2 and token[0] == "turn" and token[1] in {"#left", "#right", "#around"}:
-        return True
-    elif len(token) >= 2 and token[0] == "face" and token[1] in {'#north', '#south', '#west', '#east'}:
-        return True
-    elif len(token) >= 4 and token[0] in {"put", "pick"} and token[2] == "ofType:" and token[3] in {'#balloons', '#chips'}:
-        return True
-    return False
+# CodeBlock -> "[" InstructionList "]"
+def parse_code_block():
+    expect('LBRACKET')
+    instrs = []
+    while current_token() and current_token()[0] != 'RBRACKET':
+        instrs.append(parse_instruction())
+    expect('RBRACKET')
+    return instrs
 
-def parse_control_structure(token):
-    if len(token) >= 4 and token[0] == "if" and token[2] == "then":
-        return True
-    elif len(token) >= 3 and token[0] == "while" and token[2] == "do":
-        return True
-    elif len(token) >= 3 and token[0] == "repeat" and token[1] == "for":
-        return True
-    return False
+# Instruction -> VariableDeclaration | Assignment | ControlStructure | ProcedureCall
+def parse_instruction():
+    token = current_token()
+    if token is None:
+        error("Unexpected end of input in instruction")
+    if token[0] == 'PIPE':
+        return parse_variable_declaration()
+    if token[0] == 'ID' and token[1] in ('if', 'while'):
+        return parse_control_structure()
+    if token[0] == 'ID' and (pos + 1 < len(tokens) and tokens[pos+1][0] == 'ASSIGN'):
+        return parse_assignment()
+    return parse_procedure_call()
 
-def parse_procedure(token):
-    if len(token) >= 3 and token[0] == "proc" and token[1].isidentifier():
-        return True
-    return False
+# Assignment -> ID ASSIGN Expression DOT
+def parse_assignment():
+    if current_token() is None or current_token()[0] != 'ID':
+        error("Expected variable name in assignment")
+    var_name = current_token()[1]
+    advance()
+    expect('ASSIGN')
+    expr = parse_expression()
+    expect('DOT')
+    return ('assign', var_name, expr)
 
-def parse_assignment(token):
-    if len(token) >= 3 and token[1] == ":=":
+# ProcedureCall -> ID { ParameterPart } [DOT]
+def parse_procedure_call():
+    global pos, tokens
+    token = current_token()
+    if token is None or token[0] != 'ID':
+        error("Expected procedure name in procedure call")
+    proc_name = token[1]
+    advance()
+    args = []
+    while current_token() is not None:
+        token = current_token()
+        if token[0] == 'COLON':
+            advance()
+            args.append(parse_expression())
+        elif token[0] == 'ID':
+            if pos + 1 < len(tokens) and tokens[pos+1][0] == 'COLON':
+                advance()
+                expect('COLON')
+                args.append(parse_expression())
+            else:
+                break
+        else:
+            break
+    token = current_token()
+    if token is not None and token[0] == 'DOT':
+        advance()
+    elif token is not None and token[0] != 'RBRACKET':
+        error("Expected token type DOT or end-of-block but got " + str(token))
+    return ('proc_call', proc_name, args)
+
+# ControlStructure -> WhileStructure | IfStructure
+def parse_control_structure():
+    token = current_token()
+    if token[0] == 'ID' and token[1] == 'while':
+        return parse_while_structure()
+    elif token[0] == 'ID' and token[1] == 'if':
+        return parse_if_structure()
+    else:
+        error("Unknown control structure")
+
+# WhileStructure -> "while" COLON Condition "do" COLON CodeBlock
+def parse_while_structure():
+    expect('ID', 'while')
+    expect('COLON')
+    cond = parse_condition()
+    cond_parts = [cond]
+    while current_token() and not (current_token()[0] == 'ID' and current_token()[1] == 'do'):
+        if current_token()[0] == 'COLON':
+            advance()
+            cond_parts.append(':')
+            cond_parts.append(parse_expression())
+        else:
+            cond_parts.append(parse_expression())
+    expect('ID', 'do')
+    expect('COLON')
+    block = parse_code_block()
+    return ('while', cond_parts, block)
+
+# IfStructure -> "if" COLON Condition "then" COLON CodeBlock [ "else" COLON CodeBlock ]
+def parse_if_structure():
+    expect('ID', 'if')
+    expect('COLON')
+    cond = parse_condition()
+    cond_parts = [cond]
+    while current_token() and not (current_token()[0] == 'ID' and current_token()[1] == 'then'):
+        if current_token()[0] == 'COLON':
+            advance()
+            cond_parts.append(':')
+            cond_parts.append(parse_expression())
+        else:
+            cond_parts.append(parse_expression())
+    expect('ID', 'then')
+    expect('COLON')
+    then_block = parse_code_block()
+    else_block = None
+    if current_token() and current_token()[0] == 'ID' and current_token()[1] == 'else':
+        advance()
+        expect('COLON')
+        else_block = parse_code_block()
+    return ('if', cond_parts, then_block, else_block)
+
+# Condition se trata simplemente como una expresión en este parser
+def parse_condition():
+    return parse_expression()
+
+# Expression -> NUMBER | ID | HASHID
+def parse_expression():
+    token = current_token()
+    if token is None:
+        error("Expected an expression but found end of input")
+    if token[0] == 'NUMBER':
+        value = token[1]
+        advance()
+        return value
+    elif token[0] in ('ID', 'HASHID'):
+        value = token[1]
+        advance()
+        return value
+    else:
+        error("Expected an expression (NUMBER, ID, or HASHID)")
+
+# --------------------------------------------------
+# Función principal de la lógica
+# --------------------------------------------------
+def check_file(filename):
+    """
+    Lee el archivo cuyo nombre se pasa como parámetro, lo tokeniza y lo parsea.
+    Retorna True si el archivo cumple con las reglas del lenguaje; False en caso contrario.
+    Además, para el caso global se exige que la declaración de variables tenga exactamente 4 identificadores.
+    """
+    global tokens, pos, variables, procedures
+    try:
+        with open(filename, 'r') as file:
+            source_code = file.read()
+        tokens = tokenize(source_code)
+        pos = 0
+        variables = set()
+        procedures = {}
+        program = parse_program()
+        # Verificar que la declaración global tenga exactamente 4 variables.
+        if len(program['variables']) != 4:
+            raise Exception("La declaración global de variables debe tener exactamente 4 identificadores.")
+        # Verificar que se hayan consumido todos los tokens.
+        if pos != len(tokens):
+            raise Exception("Se encontraron tokens extra al final de la entrada.")
         return True
-    return False
+    except Exception as e:
+        # Para depuración se puede imprimir el error:
+        # print("Parsing error:", e)
+        return False
