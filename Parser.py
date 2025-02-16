@@ -23,7 +23,7 @@ def tokenizer(text):
         'canPut', 'canPick', 'canMove', 'canJump', 'not', 'goto', "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z",
 "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"
     }
-    variable_declaration = re.compile(r'^\s*\|[a-z][a-zA-Z0-9]*(\s*[a-z][a-zA-Z0-9]*)*\|\s*$')
+    variable_declaration = re.compile(r'^\s*\|[a-z][a-zA-Z0-9]*(\s*, \s*[a-z][a-zA-Z0-9]*)*\|\s*$')
     procedure_declaration = re.compile(r'^\s*proc\s+[a-z][a-zA-Z0-9]*:\s*[a-z][a-zA-Z0-9]*(\s*and:\s*[a-z][a-zA-Z0-9]*)*\s*\[\s*\]$')
     directions = {'#north', '#south', '#west', '#east', '#front', '#right', '#left', '#back', '#around'}
     types = {'#balloons', '#chips'}
@@ -102,24 +102,29 @@ def tokenizer(text):
     return valid_tokens
 
 
-def parser(valid_token):
-    #dic = {}
-    #variables = set()
-    for token in valid_token.keys():
-        if token == "DIRECTIONS":
-            if valid_token["DIRECTIONS"][0] in {"move", "turn", "face", "put", "pick", "jump", "nop"}:
-                parse_command(valid_token["DIRECTIONS"])
-        if token == "KEYWORD":
-            if valid_token["KEYWORD"][0] in {"if", "while", "repeat"}:
-                parse_control_structure(valid_token["KEYWORD"])
-        if token == "PROCEDURE_DECLARATION":
-            if valid_token["PROCEDURE_DECLARATION"][0] == "proc":
-                parse_procedure(valid_token["PROCEDURE_DECLARATION"])
-        else:
-            raise SyntaxError(f"Error de sintaxis en la línea: {token}")
-        
+
+def parser(valid_tokens):
+    for token_type, tokens in valid_tokens.items():
+        if token_type == "KEYWORD":
+            for token in tokens:
+                if token[0] in {"move", "turn", "face", "put", "pick", "jump", "nop"}:
+                    if not parse_command(token):
+                        raise SyntaxError(f"Comando inválido: {token}")
+                elif token[0] in {"if", "while", "repeat"}:
+                    if not parse_control_structure(token):
+                        raise SyntaxError(f"Estructura de control inválida: {token}")
+        elif token_type == "PROCEDURE_DECLARATION":
+            for token in tokens:
+                if not parse_procedure(token):
+                    raise SyntaxError(f"Declaración de procedimiento inválida: {token}")
+        elif token_type == "ASSIGNMENT":
+            for token in tokens:
+                if not parse_assignment(token):
+                    raise SyntaxError(f"Asignación inválida: {token}")
+        elif token_type == "OTHER":
+            raise SyntaxError(f"Token no reconocido: {tokens}")
+
 def parse_command(token):
-    """Verifica si un comando es válido."""
     if token[0] == "move" and len(token) >= 2 and token[1].isdigit():
         return True
     elif token[0] == "turn" and len(token) >= 2 and token[1] in {"#left", "#right", "#around"}:
@@ -128,22 +133,24 @@ def parse_command(token):
         return True
     elif token[0] in {"put", "pick"} and len(token) >= 4 and token[2] == "ofType:" and token[3] in {'#balloons', '#chips'}:
         return True
-    raise SyntaxError(f"Comando inválido: {token}")
+    return False
 
 def parse_control_structure(token):
-    """Verifica estructuras de control."""
     if token[0] == "if" and len(token) >= 4 and token[2] == "then":
         return True
     elif token[0] == "while" and len(token) >= 3 and token[2] == "do":
         return True
     elif token[0] == "repeat" and len(token) >= 3 and token[1] == "for":
         return True
-    raise SyntaxError(f"Estructura de control inválida: {token}")
+    return False
 
 def parse_procedure(token):
-    """Verifica si una declaración de procedimiento es válida."""
-    if len(token) >= 3 and token[1].isidentifier() and token[2] == "[":
+    if len(token) >= 3 and token[0] == "proc" and token[1].isidentifier():
         return True
-    raise SyntaxError(f"Declaración de procedimiento inválida: {token}")
+    return False
 
-    
+def parse_assignment(token):
+    if len(token) >= 3 and token[1] == ":=":
+        return True
+    return False
+
