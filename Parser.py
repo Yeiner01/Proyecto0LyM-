@@ -102,18 +102,48 @@ def tokenizer(text):
     return valid_tokens
 
 
-def Keyword(valid_token):
-    dic = {}
-    variables = set()
-    tokens = []
-    for token in tokens:
-        if token[0] in {"move", "turn", "face", "put", "pick", "jump", "nop"}:
-            parse_command(token)
-        elif token[0] in {"if", "while", "repeat"}:
-            parse_control_structure(token)
-        elif token[0] == "proc":
-            parse_procedure(token)
+def parser(valid_token):
+    #dic = {}
+    #variables = set()
+    for token in valid_token.keys():
+        if token == "DIRECTIONS":
+            if valid_token["DIRECTIONS"][0] in {"move", "turn", "face", "put", "pick", "jump", "nop"}:
+                parse_command(valid_token["DIRECTIONS"])
+        if token == "KEYWORD":
+            if valid_token["KEYWORD"][0] in {"if", "while", "repeat"}:
+                parse_control_structure(valid_token["KEYWORD"])
+        if token == "PROCEDURE_DECLARATION":
+            if valid_token["PROCEDURE_DECLARATION"][0] == "proc":
+                parse_procedure(valid_token["PROCEDURE_DECLARATION"])
         else:
             raise SyntaxError(f"Error de sintaxis en la línea: {token}")
+        
+def parse_command(token):
+    """Verifica si un comando es válido."""
+    if token[0] == "move" and len(token) >= 2 and token[1].isdigit():
+        return True
+    elif token[0] == "turn" and len(token) >= 2 and token[1] in {"#left", "#right", "#around"}:
+        return True
+    elif token[0] == "face" and len(token) >= 2 and token[1] in {'#north', '#south', '#west', '#east'}:
+        return True
+    elif token[0] in {"put", "pick"} and len(token) >= 4 and token[2] == "ofType:" and token[3] in {'#balloons', '#chips'}:
+        return True
+    raise SyntaxError(f"Comando inválido: {token}")
+
+def parse_control_structure(token):
+    """Verifica estructuras de control."""
+    if token[0] == "if" and len(token) >= 4 and token[2] == "then":
+        return True
+    elif token[0] == "while" and len(token) >= 3 and token[2] == "do":
+        return True
+    elif token[0] == "repeat" and len(token) >= 3 and token[1] == "for":
+        return True
+    raise SyntaxError(f"Estructura de control inválida: {token}")
+
+def parse_procedure(token):
+    """Verifica si una declaración de procedimiento es válida."""
+    if len(token) >= 3 and token[1].isidentifier() and token[2] == "[":
+        return True
+    raise SyntaxError(f"Declaración de procedimiento inválida: {token}")
 
     
