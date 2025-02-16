@@ -5,7 +5,7 @@ def main():
     valid_tokens = P.tokenizer(nombre_archivo)
     try:
         P.parser(valid_tokens)
-        print("Parsing completado con éxito.")
+        
         print(valid_tokens)
     except SyntaxError as e:
         print(str(e))

@@ -1,6 +1,6 @@
  |nom x y one|
 
-  proc putChips: n andBalloons: m [
+  proc putChips: n andBalloons: m [ 
  |c, b|
  
  
