@@ -51,7 +51,8 @@ def tokenizer(text):
             valid_tokens['PROCEDURE_DECLARATION'].append(tokens)
             continue
         
-        if tokens[0] in keywords:
+        # Verificar si el primer token es una palabra clave
+        if len(tokens) > 0 and tokens[0] in keywords:
             if tokens[0] == 'goto:':
                 if len(tokens) >= 4 and tokens[2] == 'with:':
                     valid_tokens['KEYWORD'].append(tokens)
@@ -64,7 +65,7 @@ def tokenizer(text):
             elif tokens[0] == 'face:':
                 if len(tokens) >= 2 and tokens[1] in directions:
                     valid_tokens['DIRECTION'].append(tokens)
-            elif tokens[0] == 'put:' or tokens[0] == 'pick:':
+            elif tokens[0] in {'put:', 'pick:'}:
                 if len(tokens) >= 4 and tokens[2] == 'ofType:' and tokens[3] in types:
                     valid_tokens['KEYWORD'].append(tokens)
             elif tokens[0] == 'if:':
@@ -76,7 +77,7 @@ def tokenizer(text):
             elif tokens[0] == 'repeat:':
                 if len(tokens) >= 3 and tokens[1] == 'for:':
                     valid_tokens['KEYWORD'].append(tokens)
-            elif tokens[0] == 'canPut:' or tokens[0] == 'canPick:' or tokens[0] == 'canMove:' or tokens[0] == 'canJump:':
+            elif tokens[0] in {'canPut:', 'canPick:', 'canMove:', 'canJump:'}:
                 if len(tokens) >= 4 and tokens[2] == 'ofType:' and tokens[3] in types:
                     valid_tokens['KEYWORD'].append(tokens)
             elif tokens[0] == 'not:':
@@ -104,10 +105,10 @@ def parser(valid_tokens):
     for token_type, tokens in valid_tokens.items():
         if token_type == "KEYWORD":
             for token in tokens:
-                if token[0] in {"move", "turn", "face", "put", "pick", "jump", "nop"}:
+                if len(token) > 0 and token[0] in {"move", "turn", "face", "put", "pick", "jump", "nop"}:
                     if not parse_command(token):
                         return False
-                elif token[0] in {"if", "while", "repeat"}:
+                elif len(token) > 0 and token[0] in {"if", "while", "repeat"}:
                     if not parse_control_structure(token):
                         return False
         elif token_type == "PROCEDURE_DECLARATION":
@@ -123,22 +124,22 @@ def parser(valid_tokens):
     return True
 
 def parse_command(token):
-    if token[0] == "move" and len(token) >= 2 and token[1].isdigit():
+    if len(token) >= 2 and token[0] == "move" and token[1].isdigit():
         return True
-    elif token[0] == "turn" and len(token) >= 2 and token[1] in {"#left", "#right", "#around"}:
+    elif len(token) >= 2 and token[0] == "turn" and token[1] in {"#left", "#right", "#around"}:
         return True
-    elif token[0] == "face" and len(token) >= 2 and token[1] in {'#north', '#south', '#west', '#east'}:
+    elif len(token) >= 2 and token[0] == "face" and token[1] in {'#north', '#south', '#west', '#east'}:
         return True
-    elif token[0] in {"put", "pick"} and len(token) >= 4 and token[2] == "ofType:" and token[3] in {'#balloons', '#chips'}:
+    elif len(token) >= 4 and token[0] in {"put", "pick"} and token[2] == "ofType:" and token[3] in {'#balloons', '#chips'}:
         return True
     return False
 
 def parse_control_structure(token):
-    if token[0] == "if" and len(token) >= 4 and token[2] == "then":
+    if len(token) >= 4 and token[0] == "if" and token[2] == "then":
         return True
-    elif token[0] == "while" and len(token) >= 3 and token[2] == "do":
+    elif len(token) >= 3 and token[0] == "while" and token[2] == "do":
         return True
-    elif token[0] == "repeat" and len(token) >= 3 and token[1] == "for":
+    elif len(token) >= 3 and token[0] == "repeat" and token[1] == "for":
         return True
     return False
 
