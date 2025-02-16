@@ -102,5 +102,25 @@ def tokenizer(text):
     return valid_tokens
 
 
+def Keyword(valid_token):
+    dic = {}
+    for i in valid_token["KEYWORD"]:
+        
+
+    for i in valid_token["VARIABLE_DECLARATION"]:
+
+    for i in valid_token["PROCEDURE_DECLARATION"]:
+
+    for i in valid_token["DIRECTION"]:
+
+    for i in valid_token["TYPE"]:
+    
+    for i in valid_token["ASSIGNMENT"]:
+
+    for i in valid_token["CONDITION"]:
+
+    for i in valid_token["OPERATION"]:
+
+    for i in valid_token["OTHER"]:
 
     
