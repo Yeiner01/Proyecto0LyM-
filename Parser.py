@@ -40,7 +40,7 @@ def tokenizer(text):
     }
 
     
-    for line in range(keywords):
+    for line in lines :
         tokens = line.strip().split()
         if not tokens:
             continue
@@ -103,7 +103,9 @@ def parser(valid_tokens):
     for token_type, tokens in valid_tokens.items():
         if token_type == "KEYWORD":
             for token in tokens:
-                if token[0] in {"move", "turn", "face", "put", "pick", "jump", "nop"}:
+                if token[0] in {'move', 'turn', 'face', 'put', 'pick', 'jump', 'nop',
+        'if', 'then', 'else', 'while', 'do', 'repeat', 'for',
+        'canPut', 'canPick', 'canMove', 'canJump', 'not', 'goTo'}:
                     if not parse_command(token):
                         raise SyntaxError(f"Comando inválido: {token}")
                 elif token[0] in {"if", "while", "repeat"}:
