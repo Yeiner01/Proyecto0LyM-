@@ -9,7 +9,7 @@ def leer_archivo(nombre_archivo):
 
     try:
         with open(nombre_archivo, "r", encoding="utf-8") as archivo:
-            return archivo.read().lower()   #se convierte todo a minusculas
+            return archivo.read()   #se convierte todo a minusculas
     except FileNotFoundError:
         return f"Error: El archivo '{nombre_archivo}' no existe."
     except Exception as e:
@@ -36,8 +36,8 @@ def tokenizer(text):
         'TYPE': [],
         'ASSIGNMENT': [],
         'CONDITION': [],
-        'OPERATION': [],
-        'OTHER': []
+        'OPERATION': []
+        
     }
 
     
@@ -95,8 +95,7 @@ def tokenizer(text):
         
         elif len(tokens) >= 4 and tokens[2] == 'ofType:' and tokens[3] in types: # Verifica si es una operación con tipos
             valid_tokens['OPERATION'].append(tokens)
-        else:
-            valid_tokens['OTHER'].append(tokens)
+        
     
     return valid_tokens
 
@@ -120,8 +119,7 @@ def parser(valid_tokens):
             for token in tokens:
                 if not parse_assignment(token):
                     raise SyntaxError(f"Asignación inválida: {token}")
-        elif token_type == "OTHER":
-            raise SyntaxError(f"Token no reconocido: {tokens}")
+        
 
 def parse_command(token):
     if token[0] == "move" and len(token) >= 2 and token[1].isdigit():
