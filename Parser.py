@@ -37,7 +37,6 @@ def tokenizer(text):
         'ASSIGNMENT': [],
         'CONDITION': [],
         'OPERATION': []
-        
     }
 
     
@@ -95,7 +94,6 @@ def tokenizer(text):
         
         elif len(tokens) >= 4 and tokens[2] == 'ofType:' and tokens[3] in types: # Verifica si es una operación con tipos
             valid_tokens['OPERATION'].append(tokens)
-        
     
     return valid_tokens
 
@@ -119,7 +117,6 @@ def parser(valid_tokens):
             for token in tokens:
                 if not parse_assignment(token):
                     raise SyntaxError(f"Asignación inválida: {token}")
-        
 
 def parse_command(token):
     if token[0] == "move" and len(token) >= 2 and token[1].isdigit():
