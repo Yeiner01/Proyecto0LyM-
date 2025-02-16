@@ -20,7 +20,7 @@ def tokenizer(text):
     keywords = {
         'move', 'turn', 'face', 'put', 'pick', 'jump', 'nop',
         'if', 'then', 'else', 'while', 'do', 'repeat', 'for',
-        'canPut', 'canPick', 'canMove', 'canJump', 'not', 'goto'
+        'canPut', 'canPick', 'canMove', 'canJump', 'not', 'goTo'
     }
     variable_declaration = re.compile(r'^\s*\|[a-z][a-zA-Z0-9]*(\s*, \s*[a-z][a-zA-Z0-9]*)*\|\s*$')
     procedure_declaration = re.compile(r'^\s*proc\s+[a-z][a-zA-Z0-9]*:\s*[a-z][a-zA-Z0-9]*(\s*and:\s*[a-z][a-zA-Z0-9]*)*\s*\[\s*\]$')
@@ -54,7 +54,7 @@ def tokenizer(text):
         
         
         if tokens[0] in keywords:
-            if tokens[0] == 'goto:':
+            if tokens[0] == 'goTo:':
                 if len(tokens) >= 4 and tokens[2] == 'with:':
                     valid_tokens['KEYWORD'].append(tokens)
             elif tokens[0] == 'move:':
