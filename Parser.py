@@ -100,6 +100,7 @@ def tokenizer(text):
 
 
 def parser(valid_tokens):
+    valid_tokens = tokenizer(valid_tokens)
     for token_type, tokens in valid_tokens.items():
         if token_type == "KEYWORD":
             for token in tokens:
