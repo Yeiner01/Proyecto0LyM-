@@ -1,7 +1,7 @@
 import Parser as P
 
 def main():
-    nombre_archivo = "ejemplo.txt"  # Asegúrate de que el archivo exista en el mismo directorio que tu script o ajusta la ruta adecuadamente.
+    nombre_archivo = input("Dijite el archivo txt: ")  # Asegúrate de que el archivo exista en el mismo directorio que tu script o ajusta la ruta adecuadamente.
     
     # Procesamiento del archivo usando las funciones definidas
     valid_tokens = P.tokenizer(nombre_archivo)

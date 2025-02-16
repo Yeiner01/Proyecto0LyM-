@@ -5,7 +5,7 @@ import re
 
 def leer_archivo(nombre_archivo):
     """Lee el contenido de un archivo .txt y lo devuelve como una cadena."""
-    nombre_archivo = "ejemplo.txt"  
+    nombre_archivo += ".txt"  
 
     try:
         with open(nombre_archivo, "r", encoding="utf-8") as archivo:
