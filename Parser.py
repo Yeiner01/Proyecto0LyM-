@@ -9,7 +9,7 @@ def leer_archivo(nombre_archivo):
 
     try:
         with open(nombre_archivo, "r", encoding="utf-8") as archivo:
-            return archivo.read()
+            return archivo.read().lower()   #se convierte todo a minusculas
     except FileNotFoundError:
         return f"Error: El archivo '{nombre_archivo}' no existe."
     except Exception as e:
@@ -152,4 +152,5 @@ def parse_assignment(token):
     if len(token) >= 3 and token[1] == ":=":
         return True
     return False
+
 
