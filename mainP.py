@@ -1,4 +1,4 @@
-from ParseP import d
+
 import ParseP as PP
 
 def main():
