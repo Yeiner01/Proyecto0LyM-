@@ -40,7 +40,7 @@ def tokenizer(text):
     }
 
     
-    for line in lines:
+    for line in range(lines - 1):
         tokens = line.strip().split()
         if not tokens:
             continue
