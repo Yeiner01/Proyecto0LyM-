@@ -63,10 +63,10 @@ def tokenizer(text):
                     valid_tokens['KEYWORD'].append(tokens)
             elif tokens[0] == 'turn:':
                 if len(tokens) >= 2 and tokens[1] in {'#left', '#right', '#around'}:
-                    valid_tokens['DIRECTIONS'].append(tokens)
+                    valid_tokens['DIRECTION'].append(tokens)
             elif tokens[0] == 'face:':
                 if len(tokens) >= 2 and tokens[1] in directions:
-                    valid_tokens['DIRECTIONS'].append(tokens)
+                    valid_tokens['DIRECTION'].append(tokens)
             elif tokens[0] == 'put:' or tokens[0] == 'pick:':
                 if len(tokens) >= 4 and tokens[2] == 'ofType:' and tokens[3] in types:
                     valid_tokens['KEYWORD'].append(tokens)
