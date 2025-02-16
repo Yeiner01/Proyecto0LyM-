@@ -104,8 +104,10 @@ def tokenizer(text):
 
 def Keyword(valid_token):
     dic = {}
+    variables = set()
+    tokens = []
     for i in valid_token["KEYWORD"]:
-        
+
 
     for i in valid_token["VARIABLE_DECLARATION"]:
 
