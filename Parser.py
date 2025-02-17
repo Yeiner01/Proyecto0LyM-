@@ -100,7 +100,7 @@ def tokenizer(text):
 
 
 def parser(valid_tokens):
-    valid_tokens = tokenizer(valid_tokens)
+    
     for token_type, tokens in valid_tokens.items():
         if token_type == "KEYWORD":
             for token in tokens:
@@ -133,16 +133,16 @@ def parse_command(token):
     return False
 
 def parse_control_structure(token):
-    if token[0] == "if" and len(token) >= 4 and token[2] == "then":
+    if token[0] == "if:" and len(token) >= 4 and token[2] == "then":
         return True
-    elif token[0] == "while" and len(token) >= 3 and token[2] == "do":
+    elif token[0] == "while:" and len(token) >= 3 and token[2] == "do":
         return True
-    elif token[0] == "repeat" and len(token) >= 3 and token[1] == "for":
+    elif token[0] == "repeat:" and len(token) >= 3 and token[1] == "for":
         return True
     return False
 
 def parse_procedure(token):
-    if len(token) >= 3 and token[0] == "proc" and token[1].isidentifier():
+    if len(token) >= 3 and token[0] == "proc:" and token[1].isidentifier():
         return True
     return False
 
