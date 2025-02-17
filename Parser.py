@@ -42,9 +42,9 @@ def parser(tokens):
             
             
     for linea in token_list:
-        for token in linea:
-            if '|' in linea[0] and '|' in token[-1]:  #una idea: si cumple con las condiciones se va eleminando de la lista
-                token_list.remove(linea)
+        linea = ''.join(linea)
+        if variable_declaration.match(linea) #una idea: si cumple con las condiciones se va eleminando de la lista
+            token_list.remove(linea)
                 
             if token[0] in keywords:
                 if not parse_command(token):
