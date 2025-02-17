@@ -42,26 +42,53 @@ def parser(tokens):
             
             
     for linea in token_list:
-        linea = ''.join(linea)
-        if variable_declaration.match(linea) #una idea: si cumple con las condiciones se va eleminando de la lista
+        linea1 = ''.join(linea)
+        if variable_declaration.match(linea1) #una idea: si cumple con las condiciones se va eleminando de la lista
             token_list.remove(linea)
-                
-            if token[0] in keywords:
-                if not parse_command(token):
-                    raise SyntaxError(f"Comando inválido: {token}")
-            elif token[0] in {"if", "while", "repeat"}:
-                if not parse_control_structure(token):
-                    raise SyntaxError(f"Estructura de control inválida: {token}")
-            elif variable_declaration.match(token.join):
-                if not parse_assignment(token):
-                    raise SyntaxError(f"Declaración de variable inválida: {token}")
-            elif procedure_declaration.match(token):
-                if not parse_procedure(token):
-                    raise SyntaxError(f"Declaración de procedimiento inválida: {token}")
-        elif token_type == "ASSIGNMENT":
-            for token in tokens:
-                if not parse_assignment(token):
-                    raise SyntaxError(f"Asignación inválida: {token}")
+        elif procedure_declaration.match(linea1):
+            token_list.remove(linea)
+        elif linea[0] == 'goTo:':
+            if len(linea) >= 4 and linea[2] == 'with:':
+                token_list.remove(linea)
+        elif linea[0] == 'move:':
+            if len(linea) >= 2:
+                token_list.remove(linea)
+        elif linea[0] == 'turn:':
+            if len(linea) >= 2 and linea[1] in {'#left', '#right', '#around'}:
+                token_list.remove(linea)
+        elif linea[0] == 'face:':
+            if len(linea) >= 2 and linea[1] in directions:
+                token_list.remove(linea)
+        elif linea[0] == 'put:' or linea[0] == 'pick:':
+            if len(linea) >= 4 and linea[2] == 'ofType:' and linea[3] in types:
+                token_list.remove(linea)
+        elif linea[0] == 'if:':
+            if len(linea) >= 4 and linea[2] == 'then:':
+                token_list.remove(linea)
+        elif linea[0] == 'while:':
+            if len(linea) >= 3 and linea[2] == 'do:':
+                token_list.remove(linea)
+        elif linea[0] == 'repeat:':
+            if len(tokens) >= 3 and linea[1] == 'for:':
+                token_list.remove(linea)
+        elif linea[0] == 'canPut:' or linea[0] == 'canPick:' or linea[0] == 'canMove:' or tokens[0] == 'canJump:':
+            if len(linea) >= 4 and linea[2] == 'ofType:' and tokens[3] in types:
+                token_list.remove(linea)
+        elif linea[0] == 'not:':
+            if len(linea) >= 2:
+                token_list.remove(linea)
+    
+    elif len(tokens) >= 3 and tokens[1] == ':=': #Verifica si es una asignación de variable
+        valid_tokens['ASSIGNMENT'].append(tokens)
+
+    
+    elif len(tokens) >= 2 and tokens[0] == 'facing:' and tokens[1] in directions: # Verifica si es una condición de dirección
+        valid_tokens['CONDITION'].append(tokens)
+    
+    elif len(tokens) >= 4 and tokens[2] == 'ofType:' and tokens[3] in types: # Verifica si es una operación con tipos
+        valid_tokens['OPERATION'].append(tokens)
+
+        
 
 def parse_command(token):
     if token[0] == "move" and len(token) >= 2 and token[1].isdigit():
