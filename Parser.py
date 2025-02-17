@@ -40,45 +40,45 @@ def parser(tokens):
     directions = {'#north', '#south', '#west', '#east', '#front', '#right', '#left', '#back', '#around'}
     types = {'#balloons', '#chips'}
             
-            
-    lines_to_remove = []
-
-    for i, linea in enumerate(token_list):
+    for linea in token_list:
         linea1 = ''.join(linea)
-
-        if variable_declaration.match(linea1) or procedure_declaration.match(linea1):
-            lines_to_remove.append(i)
-        elif linea[0] == 'goTo:' and len(linea) >= 4 and linea[2] == 'with:':
-            lines_to_remove.append(i)
-        elif linea[0] == 'move:' and len(linea) >= 2:
-            lines_to_remove.append(i)
-        elif linea[0] == 'turn:' and len(linea) >= 2 and linea[1] in {'#left', '#right', '#around'}:
-            lines_to_remove.append(i)
-        elif linea[0] == 'face:' and len(linea) >= 2 and linea[1] in directions:
-            lines_to_remove.append(i)
-        elif linea[0] in {'put:', 'pick:'} and len(linea) >= 4 and linea[2] == 'ofType:' and linea[3] in types:
-            lines_to_remove.append(i)
-        elif linea[0] == 'if:' and len(linea) >= 4 and linea[2] == 'then:':
-            lines_to_remove.append(i)
-        elif linea[0] == 'while:' and len(linea) >= 3 and linea[2] == 'do:':
-            lines_to_remove.append(i)
-        elif linea[0] == 'repeat:' and len(linea) >= 3 and linea[1] == 'for:':
-            lines_to_remove.append(i)
-        elif linea[0] in {'canPut:', 'canPick:', 'canMove:', 'canJump:'} and len(linea) >= 4 and linea[2] == 'ofType:' and linea[3] in types:
-            lines_to_remove.append(i)
-        elif linea[0] == 'not:' and len(linea) >= 2:
-            lines_to_remove.append(i)
+        if variable_declaration.match(linea1): #una idea: si cumple con las condiciones se va eleminando de la lista
+            token_list.remove(linea)
+        elif procedure_declaration.match(linea1):
+            token_list.remove(linea)
+        elif linea[0] == 'goTo:':
+            if len(linea) >= 4 and linea[2] == 'with:':
+                token_list.remove(linea)
+        elif linea[0] == 'move:':
+            if len(linea) >= 2:
+                token_list.remove(linea)
+        elif linea[0] == 'turn:':
+            if len(linea) >= 2 and linea[1] in {'#left', '#right', '#around'}:
+                token_list.remove(linea)
+        elif linea[0] == 'face:':
+            if len(linea) >= 2 and linea[1] in directions:
+                token_list.remove(linea)
+        elif linea[0] == 'put:' or linea[0] == 'pick:':
+            if len(linea) >= 4 and linea[2] == 'ofType:' and linea[3] in types:
+                token_list.remove(linea)
+        elif linea[0] == 'if:':
+            if len(linea) >= 4 and linea[2] == 'then:':
+                token_list.remove(linea)
+        elif linea[0] == 'while:':
+            if len(linea) >= 3 and linea[2] == 'do:':
+                token_list.remove(linea)
+        elif linea[0] == 'repeat:':
+            if len(linea) >= 3 and linea[1] == 'for:':
+                token_list.remove(linea)
+        elif linea[0] == 'canPut:' or linea[0] == 'canPick:' or linea[0] == 'canMove:' or linea[0] == 'canJump:':
+            if len(linea) >= 4 and linea[2] == 'ofType:' and tokens[3] in types:
+                token_list.remove(linea)
+        elif linea[0] == 'not:':
+            if len(linea) >= 2:
+                token_list.remove(linea)
         elif len(linea) >= 2 and linea[0] == 'facing:' and linea[1] in directions:
-            lines_to_remove.append(i)
-    
-    for index in reversed(lines_to_remove):
-        del token_list[index]
-        
-    print(token_list)
-
-    return len(token_list) == 0
-
-
-
-
+            token_list.remove(linea)
+    if len(token_list) == 0:
+        return True
+    return False
 
