@@ -43,13 +43,16 @@ def parser(tokens):
             
     for linea in token_list:
         for token in linea:
+            if '|' in linea[0] and '|' in token[-1]:  #una idea: si cumple con las condiciones se va eleminando de la lista
+                token_list.remove(linea)
+                
             if token[0] in keywords:
                 if not parse_command(token):
                     raise SyntaxError(f"Comando inválido: {token}")
             elif token[0] in {"if", "while", "repeat"}:
                 if not parse_control_structure(token):
                     raise SyntaxError(f"Estructura de control inválida: {token}")
-            elif variable_declaration.match(token):
+            elif variable_declaration.match(token.join):
                 if not parse_assignment(token):
                     raise SyntaxError(f"Declaración de variable inválida: {token}")
             elif procedure_declaration.match(token):
