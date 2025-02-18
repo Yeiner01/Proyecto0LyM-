@@ -9,13 +9,17 @@ def leer_archivo(nombre_archivo):
 
     try:
         with open(nombre_archivo, "r", encoding="utf-8") as archivo:
-            return archivo.read().lower()   #se convierte todo a minusculas
+            return archivo.read().lower()   
     except FileNotFoundError:
         return f"Error: El archivo '{nombre_archivo}' no existe."
     except Exception as e:
         return f"Ocurrió un error: {e}"  
 def tokenizer(text):
-    archivo = leer_archivo(text)
+    try:
+        archivo = leer_archivo(text)
+    except Exception as e:
+        print(e)
+        return []
     
     lines = archivo.split('\n')
     token_list = []
@@ -27,58 +31,60 @@ def tokenizer(text):
     return token_list
 
 
+def parser(token_list):
+    variables = set()  # Almacena las variables definidas
+    procedimientos = {}  # Almacena los procedimientos definidos y sus parámetros
+    stack = []  # Para verificar los bloques []
+    
+    for line in token_list:
+        if not line:
+            continue
 
-def parser(tokens):
-    token_list = tokenizer(tokens)
-    keywords = {
-        'move', 'turn', 'face', 'put', 'pick', 'jump', 'nop',
-        'if', 'then', 'else', 'while', 'do', 'repeat', 'for',
-        'canPut', 'canPick', 'canMove', 'canJump', 'not', 'goTo'
-    }
-    variable_declaration = re.compile(r'^\s*\|[a-z][a-zA-Z0-9]*(\s*, \s*[a-z][a-zA-Z0-9]*)*\|\s*$')
-    procedure_declaration = re.compile(r'^\s*proc\s+[a-z][a-zA-Z0-9]*:\s*[a-z][a-zA-Z0-9]*(\s*and:\s*[a-z][a-zA-Z0-9]*)*\s*\[\s*\]$')
-    directions = {'#north', '#south', '#west', '#east', '#front', '#right', '#left', '#back', '#around'}
-    types = {'#balloons', '#chips'}
+        first_token = line[0]
+
+        # Verifica declaración de variables
+        if first_token.startswith("|") and first_token.endswith("|"):
+            vars_def = first_token.strip("|").split()
+            variables.update(vars_def)
+        
+        # Verifica declaración de procedimientos
+        elif first_token == "proc":
+            proc_name = line[1]
+            params = []
             
-    for linea in token_list:
-        linea1 = ''.join(linea)
-        if variable_declaration.match(linea1): #una idea: si cumple con las condiciones se va eleminando de la lista
-            token_list.remove(linea)
-        elif procedure_declaration.match(linea1):
-            token_list.remove(linea)
-        elif linea[0] == 'goTo:':
-            if len(linea) >= 4 and linea[2] == 'with:':
-                token_list.remove(linea)
-        elif linea[0] == 'move:':
-            if len(linea) >= 2:
-                token_list.remove(linea)
-        elif linea[0] == 'turn:':
-            if len(linea) >= 2 and linea[1] in {'#left', '#right', '#around'}:
-                token_list.remove(linea)
-        elif linea[0] == 'face:':
-            if len(linea) >= 2 and linea[1] in directions:
-                token_list.remove(linea)
-        elif linea[0] == 'put:' or linea[0] == 'pick:':
-            if len(linea) >= 4 and linea[2] == 'ofType:' and linea[3] in types:
-                token_list.remove(linea)
-        elif linea[0] == 'if:':
-            if len(linea) >= 4 and linea[2] == 'then:':
-                token_list.remove(linea)
-        elif linea[0] == 'while:':
-            if len(linea) >= 3 and linea[2] == 'do:':
-                token_list.remove(linea)
-        elif linea[0] == 'repeat:':
-            if len(linea) >= 3 and linea[1] == 'for:':
-                token_list.remove(linea)
-        elif linea[0] == 'canPut:' or linea[0] == 'canPick:' or linea[0] == 'canMove:' or linea[0] == 'canJump:':
-            if len(linea) >= 4 and linea[2] == 'ofType:' and tokens[3] in types:
-                token_list.remove(linea)
-        elif linea[0] == 'not:':
-            if len(linea) >= 2:
-                token_list.remove(linea)
-        elif len(linea) >= 2 and linea[0] == 'facing:' and linea[1] in directions:
-            token_list.remove(linea)
-    if len(token_list) == 0:
-        return True
-    return False
+            # Extraer parámetros si existen
+            if ":" in proc_name:
+                proc_parts = proc_name.split(":")
+                proc_name = proc_parts[0]
+                params.append(proc_parts[1])
+            
+            for i in range(2, len(line) - 1, 2):
+                if line[i] == "and":
+                    params.append(line[i+1])
+            
+            procedimientos[proc_name] = set(params)
+        
+        # Verifica asignaciones de variables
+        elif len(line) >= 3 and line[1] == ":=":
+            var_name = line[0]
+            if var_name not in variables:
+                return False  # Uso de variable no declarada
+
+        # Verifica llamadas a procedimientos
+        elif first_token in procedimientos:
+            params = [tok for tok in line if tok.isnumeric()]
+            if set(params) != procedimientos[first_token]:
+                return False  # Parámetros incorrectos
+        
+        # Verifica apertura y cierre de bloques
+        for token in line:
+            if token == "[":
+                stack.append("[")
+            elif token == "]":
+                if not stack or stack[-1] != "[":
+                    return False
+                stack.pop()
+    
+    return len(stack) == 0  # Si la pila está vacía, la sintaxis es válida
+
 
