@@ -32,27 +32,21 @@ def tokenizer(text):
 
 
 def parser(token_list):
-    variables = set()  # Almacena las variables definidas
-    procedimientos = {}  # Almacena los procedimientos definidos y sus parámetros
-    stack = []  # Para verificar los bloques []
+    variables = set()
+    procedimientos = {} 
+    stack = [] 
     
     for line in token_list:
         if not line:
             continue
 
         first_token = line[0]
-
-        # Verifica declaración de variables
         if first_token.startswith("|") and first_token.endswith("|"):
             vars_def = first_token.strip("|").split()
             variables.update(vars_def)
-        
-        # Verifica declaración de procedimientos
         elif first_token == "proc":
             proc_name = line[1]
             params = []
-            
-            # Extraer parámetros si existen
             if ":" in proc_name:
                 proc_parts = proc_name.split(":")
                 proc_name = proc_parts[0]
@@ -63,20 +57,14 @@ def parser(token_list):
                     params.append(line[i+1])
             
             procedimientos[proc_name] = set(params)
-        
-        # Verifica asignaciones de variables
         elif len(line) >= 3 and line[1] == ":=":
             var_name = line[0]
             if var_name not in variables:
-                return False  # Uso de variable no declarada
-
-        # Verifica llamadas a procedimientos
+                return False 
         elif first_token in procedimientos:
             params = [tok for tok in line if tok.isnumeric()]
             if set(params) != procedimientos[first_token]:
-                return False  # Parámetros incorrectos
-        
-        # Verifica apertura y cierre de bloques
+                return False 
         for token in line:
             if token == "[":
                 stack.append("[")
@@ -85,6 +73,6 @@ def parser(token_list):
                     return False
                 stack.pop()
     
-    return len(stack) == 0  # Si la pila está vacía, la sintaxis es válida
+    return len(stack) == 0 
 
 
