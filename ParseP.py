@@ -73,7 +73,7 @@ def lexer_parser(Str_ingresado: str):
     Str_ingresado = ["D" if i in ["#north", "#south", "#east", "#west"] else
                "X" if i in ["#balloons", "#chips"] else
                "O" if i in ["#front", "#left", "#right", "#back"] else i
-               for i in Str_ingresado]
+               for i in Str_ingresado]
                     
 
             
